@@ -46,7 +46,7 @@ class DataDownloader:
             success = self._attempt_download(url, page)
 
             if not success:
-                print(f"Failed to download page {page + 1}. Stopping the download.")
+                print(f"!!! Failed to download page {page + 1}. Stopping the download.")
                 break
 
         print("Download complete.")
@@ -63,7 +63,10 @@ class DataDownloader:
                 else:
                     print(f"Attempt {attempt + 1} failed with status code: {response.status_code}")
             except httpx.RequestError as e:
-                print(f"Attempt {attempt + 1} failed with error: {e}")
+                print(f"-> Attempt {attempt + 1} failed with error: {e}")
+
+            # Add sleep between attempts
+            self._sleep_between_attempts(attempt + 1)
 
         return False
 
@@ -72,11 +75,16 @@ class DataDownloader:
         file_path = os.path.join(self.config.output_folder, f"trip_data_page_{file_number}.json")
         with open(file_path, "w") as file:
             json.dump(data, file)
-        print(f"Downloaded and saved page {page + 1}")
+        print(f"*** Downloaded and saved page {page + 1}.\n")
 
     def _sleep_random_interval(self):
         duration = random.uniform(*self.sleep_time_between_requests)
         print(f"Sleeping for {duration:.2f} seconds to avoid rate limits.")
+        time.sleep(duration)
+
+    def _sleep_between_attempts(self, attempt):
+        duration = random.uniform(5, 10)
+        print(f"Sleeping for {duration:.2f} seconds after attempt {attempt} to avoid quick retries.")
         time.sleep(duration)
 
 if __name__ == "__main__":
@@ -88,11 +96,11 @@ if __name__ == "__main__":
     config = DownloadConfiguration(base_url, nr_records_per_page, output_folder)
 
     # Downloader setup
-    page_index_to_continue_from = 8985
+    page_index_to_continue_from = 9077
     total_pages = 10000
     downloader = DataDownloader(config, page_index_to_continue_from,
-                                nr_of_retries=5,
-                                sleep_time_between_requests=(12, 29))
+                                nr_of_retries=8,
+                                sleep_time_between_requests=(20, 32))
 
     # Start download
     downloader.download_data(total_pages)

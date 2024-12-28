@@ -100,8 +100,11 @@ class DataProcessingUtility:
 
 if __name__ == "__main__":
 
-    start_source_files = 8844
-    end_source_file_numbers = 8985
+    # Processing trip_data_2013_2023 / trip_data_page_09078.json...
+    # [{'year': 2013, 'month': 5}]
+
+    start_source_files = 9079
+    end_source_file_numbers = 9083
 
     for file_number in range(start_source_files, end_source_file_numbers + 1):
         json_file = f"trip_data_2013_2023/trip_data_page_{str(file_number).zfill(5)}.json"
