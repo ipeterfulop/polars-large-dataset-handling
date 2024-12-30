@@ -4,3 +4,5 @@ trip_data_2013_2023/
 uv.lock
 .DS_Store
 .python-version
+*.iml
+*.log.txt

@@ -61,9 +61,9 @@ class DataDownloader:
                     self._sleep_random_interval()
                     return True
                 else:
-                    print(f"Attempt {attempt + 1} failed with status code: {response.status_code}")
+                    print(f"->  [{time.strftime('%Y-%m-%d %H:%M:%S')}] \nAttempt [ {attempt + 1} ] failed with status code: {response.status_code}")
             except httpx.RequestError as e:
-                print(f"-> Attempt {attempt + 1} failed with error: {e}")
+                print(f"->  [{time.strftime('%Y-%m-%d %H:%M:%S')}]  \nAttempt [ {attempt + 1} ] failed with error: {e}")
 
             # Add sleep between attempts
             self._sleep_between_attempts(attempt + 1)
@@ -75,31 +75,34 @@ class DataDownloader:
         file_path = os.path.join(self.config.output_folder, f"trip_data_page_{file_number}.json")
         with open(file_path, "w") as file:
             json.dump(data, file)
-        print(f"*** Downloaded and saved page {page + 1}.\n")
+        print(f"\n*** Downloaded and saved page {page + 1}.\n\n")
 
     def _sleep_random_interval(self):
         duration = random.uniform(*self.sleep_time_between_requests)
-        print(f"Sleeping for {duration:.2f} seconds to avoid rate limits.")
+        print(f"->  [{time.strftime('%Y-%m-%d %H:%M:%S')}] Sleeping for {duration:.2f} seconds to avoid rate limits.")
         time.sleep(duration)
 
     def _sleep_between_attempts(self, attempt):
-        duration = random.uniform(5, 10)
-        print(f"Sleeping for {duration:.2f} seconds after attempt {attempt} to avoid quick retries.")
+        if attempt > 10:
+            duration = random.uniform(30, 60)
+        else:
+            duration = random.uniform(5, 15)
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] \nSleeping for {duration:.2f} seconds after attempt {attempt} to avoid quick retries.")
         time.sleep(duration)
 
 if __name__ == "__main__":
     # Configuration
     base_url = "https://data.cityofchicago.org/resource/wrvz-psew.json"
-    nr_records_per_page = 1000
+    nr_records_per_page = 1_000
     output_folder = "trip_data_2013_2023"
 
     config = DownloadConfiguration(base_url, nr_records_per_page, output_folder)
 
     # Downloader setup
-    page_index_to_continue_from = 9077
-    total_pages = 10000
+    page_index_to_continue_from = 9911
+    total_pages = 20_000
     downloader = DataDownloader(config, page_index_to_continue_from,
-                                nr_of_retries=8,
+                                nr_of_retries=40,
                                 sleep_time_between_requests=(20, 32))
 
     # Start download

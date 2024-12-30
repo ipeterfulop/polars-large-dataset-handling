@@ -1,7 +1,7 @@
-from collections.abc import Callable
-import polars as pl
 import os
-
+import time
+import polars as pl
+from typing import Callable
 
 class DataProcessingUtility:
     YEAR_COLUMN = "trip_year"
@@ -23,14 +23,17 @@ class DataProcessingUtility:
     def get_column_aligned_dataframe(df_to_align: pl.DataFrame, cols_to_align_with):
         for col in cols_to_align_with:
             if col not in df_to_align.columns:
-                dataframe_to_add = df_to_align.with_columns(pl.lit(None).alias(col))
+                df_to_align = df_to_align.with_columns(pl.lit(None).alias(col))
 
         return df_to_align.select([col for col in cols_to_align_with if col in df_to_align.columns])
 
     @classmethod
     def append_json_to_parquet(cls,
                                input_json_file: str,
-                               transform: Callable[[pl.DataFrame], pl.DataFrame] = None):
+                               transform: Callable[[pl.DataFrame], pl.DataFrame] = None,
+                               log_file: str = "json_processing.log.txt"):
+
+        start_time = time.time()
 
         df = pl.read_json(input_json_file, infer_schema_length=None)
         df = DataProcessingUtility.get_column_aligned_dataframe(df, cls.get_schema_to_enforce())
@@ -46,6 +49,14 @@ class DataProcessingUtility:
                 (pl.col(cls.YEAR_COLUMN) == year) & (pl.col(cls.MONTH_COLUMN) == month)
             )
             cls.append_dataframe_to_parquet(df_filtered, year, month)
+
+        end_time = time.time()
+        duration = end_time - start_time
+
+        log_entry = f"{time.strftime('%Y-%m-%d %H:%M:%S')} | Processed file: {input_json_file} | Duration: {duration:.2f} seconds\n"
+
+        with open(log_file, "a") as log:
+            log.write(log_entry)
 
     @classmethod
     def transform_dataframe(cls, df: pl.DataFrame):
@@ -97,14 +108,10 @@ class DataProcessingUtility:
             "dropoff_centroid_location": pl.Struct  # Complex type, requires flattening if used in DataFrame
         }
 
-
 if __name__ == "__main__":
 
-    # Processing trip_data_2013_2023 / trip_data_page_09078.json...
-    # [{'year': 2013, 'month': 5}]
-
-    start_source_files = 9079
-    end_source_file_numbers = 9083
+    start_source_files = 10_014
+    end_source_file_numbers = 10_023
 
     for file_number in range(start_source_files, end_source_file_numbers + 1):
         json_file = f"trip_data_2013_2023/trip_data_page_{str(file_number).zfill(5)}.json"
