@@ -6,3 +6,4 @@ uv.lock
 .python-version
 *.iml
 *.log.txt
+__pycache__/
